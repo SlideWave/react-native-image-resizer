@@ -23,11 +23,11 @@ bool saveImage(NSString * fullPath, UIImage * image, NSString * format, float qu
     } else if ([format isEqualToString:@"PNG"]) {
         data = UIImagePNGRepresentation(image);
     }
-    
+
     if (data == nil) {
         return NO;
     }
-    
+
     NSFileManager* fileManager = [NSFileManager defaultManager];
     return [fileManager createFileAtPath:fullPath contents:data attributes:nil];
 }
@@ -65,14 +65,14 @@ UIImage * rotateImage(UIImage *inputImage, float rotationDegrees)
     const int rotDiv90 = (int)round(rotationDegrees / 90);
     const int rotQuadrant = rotDiv90 % 4;
     const int rotQuadrantAbs = (rotQuadrant < 0) ? rotQuadrant + 4 : rotQuadrant;
-    
+
     // Return the input image if no rotation specified.
     if (0 == rotQuadrantAbs) {
         return inputImage;
     } else {
         // Rotate the image by 80, 180, 270.
         UIImageOrientation orientation = UIImageOrientationUp;
-        
+
         switch(rotQuadrantAbs) {
             case 1:
                 orientation = UIImageOrientationRight; // 90 deg CW
@@ -84,7 +84,7 @@ UIImage * rotateImage(UIImage *inputImage, float rotationDegrees)
                 orientation = UIImageOrientationLeft; // 90 deg CCW
                 break;
         }
-        
+
         return [[UIImage alloc] initWithCGImage: inputImage.CGImage
                                                   scale: 1.0
                                                   orientation: orientation];
@@ -98,17 +98,18 @@ RCT_EXPORT_METHOD(createResizedImage:(NSString *)path
                   quality:(float)quality
                   rotation:(float)rotation
                   outputPath:(NSString *)outputPath
+                  ignoreExif:(bool)ignoreExif
                   callback:(RCTResponseSenderBlock)callback)
 {
     CGSize newSize = CGSizeMake(width, height);
-    
+
     //Set image extension
     NSString *extension = @"jpg";
     if ([format isEqualToString:@"PNG"]) {
         extension = @"png";
     }
 
-    
+
     NSString* fullPath;
     @try {
         fullPath = generateFilePath(extension, outputPath);
@@ -132,7 +133,7 @@ RCT_EXPORT_METHOD(createResizedImage:(NSString *)path
         }
 
         // Rotate image if rotation is specified.
-        if (0 != (int)rotation) {
+        if (!ignoreExif && 0 != (int)rotation) {
             image = rotateImage(image, rotation);
             if (image == nil) {
                 callback(@[@"Can't rotate the image.", @""]);
@@ -162,7 +163,7 @@ RCT_EXPORT_METHOD(createResizedImage:(NSString *)path
                                    @"name": fileName,
                                    @"size": fileSize == nil ? @(0) : fileSize
                                    };
-        
+
         callback(@[[NSNull null], response]);
     }];
 }
